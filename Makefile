@@ -1,8 +1,14 @@
+CC      = gcc
+IN      = db.c
+OUT     = db
+LIBS 	= -lcrypt
+OPTS 	= -O0 -g -Wall -Wextra -pedantic
+
 all:
-	cc -o db db.c -Wall -Wextra -pedantic
+	$(CC) -o$(OUT) $(LIBS) $(OPTS) $(IN)
 
 run: all
-	./db
+	./$(OUT)
 
 clean:
-	rm ./db
+	rm $(OUT)

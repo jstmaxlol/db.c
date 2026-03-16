@@ -24,9 +24,9 @@ User *currentUser = NULL;
 
 // fwd decl (funcs)
 void PrintMenu(User *user);
-void MenuHandler();
+void MenuHandler(User *user);
 //char Register(User *user);
-//int Login(User *user);
+int Login(User *user);
 //int Logout(const char *user);
 //int WriteUser(User *user); // writes User.* to disk
 //User ReadUser(User *user); // reades User.* from disk, returns User*
@@ -76,10 +76,10 @@ void PrintMenu(User *user)
         printf("│ - register                  │ \n");
     printf("╰─────────────────────────────╯\n");
 
-    MenuHandler();
+    MenuHandler(user);
 }
 
-void MenuHandler()
+void MenuHandler(User *user)
 {
     char *line = NULL;
     size_t len = 0;
@@ -90,15 +90,20 @@ void MenuHandler()
         line[read-1] = '\0';
     }
     if (read != -1) {
-        if (strcmp(line, "login") == 0)
-            printf("//TODO call Login() and pass over inputs.\n");
-
-        if (strcmp(line, "logout") == 0)
-            printf("//TODO call Logout() and pass over inputs.\n");
-
-        if (strcmp(line, "register") == 0)
-            printf("//TODO call Register() and pass over inputs.\n");
+        if (strcmp(line, "login") == 0) {
+            Login(user);
+        }
+        else if (strcmp(line, "logout") == 0) {
+//            Logout(user);
+        }
+        else if (strcmp(line, "register") == 0) {
+//            Register(user);
+        }
     }
 
     free(line);
+}
+
+int Login(User *user) {
+    printf("%s:%s -> %s", user->name, user->pass, crypt(user->pass, salt));
 }

@@ -18,8 +18,9 @@
 typedef struct {
     char *name;
     char *pass;
-    //char *hash;
 } User;
+
+User *currentUser = NULL;
 
 // fwd decl (funcs)
 void PrintMenu(User *user);
@@ -33,6 +34,7 @@ void MenuHandler();
 // crypt
 const char *salt = "$6$0x0d4743453$";
 //char *hashed = crypt(plainPass, salt);
+//if (strcmp(crypt(pass, stored_hash), stored_hash) == 0) //success
 
 
 int main(void)
@@ -50,17 +52,17 @@ void PrintMenu(User *user)
     // print user specific stuff
     if (user != NULL) {
         char welcomeMessage[8192];
-        sprintf(welcomeMessage, "welcome back, %s", user->name);
+        int msgLen = snprintf(welcomeMessage, sizeof(welcomeMessage), "welcome back, %s", user->name);
 
         // open
         printf("╭");
         // top border
-        for (unsigned int i = 0; i < strlen(welcomeMessage)+2; i++) // +2 forpadding
+        for (int i = 0; i < msgLen+2; i++) // +2 forpadding
             printf("─");
         // close and message
         printf("╮\n│ %s │\n╰", welcomeMessage);
         // bottom
-        for (unsigned int i = 0; i < strlen(welcomeMessage)+2; i++)
+        for (int i = 0; i < msgLen+2; i++)
             printf("─");
         printf("╯\n");
     }
@@ -81,9 +83,8 @@ void MenuHandler()
 {
     char *line = NULL;
     size_t len = 0;
-    ssize_t read;
 
-    read = getline(&line, &len, stdin);
+    ssize_t read = getline(&line, &len, stdin);
     // strip \n
     if (read > 0 && line[read-1] == '\n') {
         line[read-1] = '\0';

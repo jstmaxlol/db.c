@@ -12,6 +12,11 @@
  * i am sleepy and idk i just
  * wanted to write some C and
  * draw boxes. haha.
+ *
+ * von    czjstmax
+ *   <jstmaxlol at
+ *     disroot dot
+ *             org>
  */
 
 // data
@@ -20,39 +25,45 @@ typedef struct {
     char *pass;
 } User;
 
-User *currentUser = NULL;
+User *loggedUser = NULL;
+FILE *f = NULL;             // 'database'-ish file
+const char *filename = "users.txt";
 
 // fwd decl (funcs)
-void PrintMenu(User *user);
-void MenuHandler(User *user);
-//char Register(User *user);
-int Login(User *user);
-//int Logout(const char *user);
-//int WriteUser(User *user); // writes User.* to disk
-//User ReadUser(User *user); // reades User.* from disk, returns User*
+void PrintMenu(User *u);
+void MenuHandler(User *u);
+//char Register(User *u);
+void Login(User *u);
+void Logout();
+void WriteUser(); // writes user to disk
+//User ReadUser(); // reades user from disk, returns User*
+int BoxTitle(const char *str);
+void TODO();
+
 
 // crypt
 const char *salt = "$6$0x0d4743453$";
-//char *hashed = crypt(plainPass, salt);
+//char *hash = crypt(plainPass, salt);
 //if (strcmp(crypt(pass, stored_hash), stored_hash) == 0) //success
 
 
 int main(void)
 {
-//    while (true) {
-        // main loop
+    while (true) {
         PrintMenu(NULL);
-//    }
+        if (loggedUser != NULL)
+            WriteUser();
+    }
 
     return 0;
 }
 
-void PrintMenu(User *user)
+void PrintMenu(User *u)
 {
     // print user specific stuff
-    if (user != NULL) {
-        char welcomeMessage[8192];
-        int msgLen = snprintf(welcomeMessage, sizeof(welcomeMessage), "welcome back, %s", user->name);
+    if (loggedUser != NULL) {
+        char *welcomeMessage = malloc(strlen("welcome back, ")+strlen(loggedUser->name)+2);
+        int msgLen = sprintf(welcomeMessage, "welcome back, %s!", loggedUser->name);
 
         // open
         printf("╭");
@@ -65,45 +76,136 @@ void PrintMenu(User *user)
         for (int i = 0; i < msgLen+2; i++)
             printf("─");
         printf("╯\n");
+
+        free(welcomeMessage);
     }
     printf(
         "╭──────────main menu──────────╮\n"
-        "│ available options           │ \n"
-        "│ - login                     │ \n"
-        "│ - logout                    │ \n"
+        "│   >> available options <<   │ \n"
+        "│ - login      (1)            │ \n"
+        "│ - logout     (2)            │ \n"
     );
-    if (user == NULL)
-        printf("│ - register                  │ \n");
+    if (loggedUser == NULL)
+        printf("│ - register   (3)            │ \n");
     printf("╰─────────────────────────────╯\n");
 
-    MenuHandler(user);
+    MenuHandler(u);
 }
 
-void MenuHandler(User *user)
+void MenuHandler(User *u)
 {
     char *line = NULL;
     size_t len = 0;
 
+    printf("? ");
     ssize_t read = getline(&line, &len, stdin);
     // strip \n
-    if (read > 0 && line[read-1] == '\n') {
-        line[read-1] = '\0';
-    }
-    if (read != -1) {
-        if (strcmp(line, "login") == 0) {
-            Login(user);
-        }
-        else if (strcmp(line, "logout") == 0) {
-//            Logout(user);
-        }
-        else if (strcmp(line, "register") == 0) {
-//            Register(user);
-        }
-    }
+    line[strcspn(line, "\n")] = '\0';
 
-    free(line);
+    if (read) {
+        if (strcmp(line, "login") == 0 || strcmp(line, "1") == 0) {
+            // allocate u if NULL
+            if (u == NULL) {
+                u = malloc(sizeof(User));
+                if (!u) {
+                    free(line);
+                    return;
+                }
+            }
+            free(line);
+            Login(u);
+        }
+        else if (strcmp(line, "logout") == 0 || strcmp(line, "2") == 0) {
+            free(line);
+            Logout();
+        }
+        else if (strcmp(line, "register") == 0 || strcmp(line, "3") == 0) {
+            //Register(u);
+            free(line);
+        }
+        else {
+            printf("(!) unknown option :(\n");
+        }
+    }
 }
 
-int Login(User *user) {
-    printf("%s:%s -> %s", user->name, user->pass, crypt(user->pass, salt));
+void Login(User *u)
+{
+    printf(">> login <<\n");
+
+    char *line = NULL;
+    size_t len = 0;
+
+    printf("username? ");
+    ssize_t read = getline(&line, &len, stdin);
+    // strip \n
+    line[strcspn(line, "\n")] = '\0';
+
+    if (!read) 
+        printf("(!!) err reading input\n");
+
+    u->name = malloc(strlen(line)+1);
+    strcpy(u->name, line);
+    read = 0;
+
+    printf("password? ");
+    read = getline(&line, &len, stdin);
+    // strip \n
+    line[strcspn(line, "\n")] = '\0';
+
+    u->pass = malloc(strlen(line)+1);
+    strcpy(u->pass, line);
+
+    char *hash = crypt(u->pass, salt);
+
+    printf("%s:%s -> %s\n", u->name, u->pass, hash);
+
+    if (loggedUser == NULL)
+        loggedUser = malloc(sizeof(User));
+    loggedUser->name = strdup(u->name);
+    loggedUser->pass = strdup(u->pass);
+    // free u->*
+    free(u->name);
+    free(u->pass);
+}
+
+void Logout()
+{
+    if (!loggedUser)
+        return;
+    // clear the loggedUser
+    free(loggedUser->name);
+    free(loggedUser->pass);
+    free(loggedUser);
+    loggedUser = NULL;
+}
+
+void WriteUser()
+{
+    f = fopen(filename, "a");
+    if (f) {
+        char *hash = crypt(loggedUser->pass, salt);
+        fprintf(f, "%s:%s", loggedUser->name, hash);
+    }
+    fclose(f);
+
+    printf("(!) wrote %s to %s\n", loggedUser->name, filename);
+}
+
+int BoxTitle(const char *str)
+{
+    printf("╭");
+    for (unsigned int i = 0; i < strlen(str)/2; i++)
+        printf("─");
+    printf("%s", str);
+    for (unsigned int i = 0; i < strlen(str)/2; i++)
+        printf("─");
+    printf("╮\n");
+
+    return (int)strlen(str);
+}
+
+void TODO()
+{
+    printf("(!) TODO!\n");
 }

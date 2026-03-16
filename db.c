@@ -9,6 +9,9 @@
  * with minimal persis.
  * database (<crypt>)
  *
+ * i am sleepy and idk i just
+ * wanted to write some C and
+ * draw boxes. haha.
  */
 
 // data
